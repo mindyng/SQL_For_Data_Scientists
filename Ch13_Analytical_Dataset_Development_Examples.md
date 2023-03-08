@@ -22,3 +22,26 @@ I can alter the final SELECT statement to include the prior week's product categ
 
 ## How Do Sales Vary by Customer Zip Code, Market Distance, and Demographic Data?
 
+With the newly added information per zip, I could create a rural versus urban flag based on the population density of the zip code and look at customer behavior based on that value. I could assess customer longevity by zip code, or look at the distributions of amount spent or customer durations by zip code. I could correlate the percent of high-income residents per zip code with the customers’ total amount spent at the market. There are a wide variety of analyses I could do with just this dataset.
+
+Some other ideas of additional customer summary fields that could be added to this dataset if we also joined in details about the products include total purchases by product category, top vendor purchased from, number of different vendors purchased from, number of different products purchased, most frequent time of day of purchase, etc.
+
+One caveat to this analysis that we would want to inform the recipient about is that we only store the customer's current zip code in this database, so if a customer used to live in a different zip code, that past connection is lost, and all of their purchase history is now associated with the current zip code on their customer record. To maintain the changes in zip code over time, we would need to add another table to the database in which to store the customer zip code history.
+
+## How Does Product Price Distribution Affect Market Sales?
+
+One clarifying question I would have for the requester in this case before trying to answer these questions is related to time, because I know that the distribution of prices can change over time, and the answer to the second question might have changed at some point as well. So, should we answer these questions only for the most recent market season? Compare year over year? Or just look at all sales for the entire history we have tracked, ignoring any possible changes over time?
+
+The first step in this analysis is to get raw data on the price per product per market date. But that seemingly simple task then raises another question: What do we mean by “product”? Is each product_id in the database a product? Like “Carrots” sold by weight? Or do the products differ enough by vendor that I should consider each product_id sold by each vendor as a separate “product”? We were asked to look at the distribution of product prices over time, and different vendors do charge different amounts for the same products if we go by product_id , so I will choose to look at the average price per product per vendor per season. I will start with the original_price per product specified by the vendor in the vendor_inventory table, and won't consider special discounts given to customers, which would appear in the customer_purchases table. This query's results are shown in Figure 13.18:
+
+One thing you might have noticed is that my attempt to pull in a sortable value to order the market seasons has resulted in multiple month_market_season_sort values per season, because we are getting the minimum month per season per product, and some products aren't offered in the earliest month of each season. These differing values could have detrimental effects to our results later on, depending on how we use the sorting field, so we'll have to be careful how items group and sort with this value involved. We could also use a window function to get the minimum month per market_season across all rows for that season, ignoring the product_id values, which we'll switch to in the next version of the query.
+
+t would be good at this point to pick a few products and look through the detailed availability and purchase data, to quality check these summarized results before continuing.
+
+Now that I have a sale price of each item (the average price each vendor offered each product for each season), I could start exploring the distribution of prices.
+
+One caveat with these results is that we're summing up different types of quantities, so we're counting an ounce, pound, or unit product as “an item sold.” So our quantity isn't exactly apples-to-apples across seasons, but gives us a quick sales volume measure for rough comparison.
+
+In Figure 13.22, you'll see that we're now sorting the seasons in the correct order (even though we're not outputting the sort value), and we're displaying the minimum and maximum price per grouping, as well as the total_sales . This gives us the data to answer the second question, and we can see that with this sample data, the total_sales is highest for price:ntile 3 in every season, so the higher-priced items are generating the most sales for the market.
+
+Hopefully these dataset creation walkthroughs have given you a sense of the variety of ways you can combine and summarize data to create a dataset to answer analytical questions, and the kinds of clarifying questions an experienced analyst might ask while going through this process. Keep in mind that each dataset can now be refreshed to pull in the latest data by rerunning the queries, and the results can be reused to answer many questions, not just the ones initially asked!
