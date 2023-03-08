@@ -1,0 +1,24 @@
+For example, “As the number of different available products at the market increases, do sales of fresh produce go up or down?” is a question exploring the relationship between two variables: product variety and sales. If sales go up when the product variety goes up, then the two variables are positively correlated. If sales go down when product variety goes up, then the two variables are negatively correlated.
+
+## What Factors Correlate with Fresh Produce Sales?
+
+I could choose to summarize each value per week and then create a scatterplot of the weekly pairs of numbers to visualize the relationship between them, for example. To do that for a variety of variables, I'll need to write a query that generates a dataset with one row per market week containing weekly summaries of each value to be explored.
+
+I'll first need to determine what products are considered “fresh produce,” then calculate sales of those products per week, and pull in other variables (factors) summarized per week to explore in relation to those sales. Some ideas for values to compare to sales include: product availability (number of vendors carrying the products, volume of inventory available for purchase, or special high-demand product seasonal availability, to give a few examples), product cost, time of year/season, sales trends over time, and things that affect all sales at the market such as weather and the number of customers shopping at the market.
+
+Because this is a question about something related to sales over time, I'm going to start with the product sales part of the question, then join other information to the results of that query.
+
+I used an INNER JOIN instead of a LEFT JOIN , because for this sales calculation, I'm not interested in products that don't have purchases. At this stage, it's good to check the count of rows returned, to ensure it makes sense given your join selection. I also look at the details, to make sure I'm pulling the right data from the tables I meant to pull from, that I'm joining on the correct fields, and that my results are filtered the way I expect.
+
+This is a common SQL design error. You might think that the solution is to rearrange all of the joins, but if that's the only change you make, you will still have the same issue. What's happening is that our WHERE clause is filtering the results to only rows with a customer purchase from product category 1. So if there are no sales on a market date, there are no product categories associated with that date, so we are filtering it out, defeating the purpose of the RIGHT JOIN . (This is also a good reason to look at the data in each table before joining and write some quality control queries such as distinct counts of market dates, so you are aware if some expected values are missing after you join the tables together.)
+
+The solution to this filter issue is to put the product category filter in the JOIN ON clause instead of in the WHERE clause, which is something we haven't covered previously. I can join to the product table on the product_id and product_category_id fields, and filter the product_category_id in the ON clause. This makes the filter only apply to the data from the product table (and now the customer_purchases table, since they're inner joined), and not to the results set, the way the WHERE clause does. So now all of our market dates will be returned. I moved the market_date_info fields to appear first, and modified the join to include the filter. You can now see that we're joining on the product_id and filtering the product_category_id in the ON section of the JOIN . Note that now there is no WHERE clause, but we are still filtering the results of one of the tables being joined into the dataset! 
+
+Now that I see these results, I realize that I would like to have a count of vendors selling and products available at the entire market, in addition to the product availability for product category 1. To avoid developing another query that will need to be joined in, I will remove the product_category_id filter and use CASE statements to create a set of fields that provides the same metrics, but only for products in the category. Then, the existing fields will turn into a count for all vendors and products at the market:
+
+One easy quality check to do on the output here is to make sure that every field with the category1 suffix has an equal or lower value than the corresponding field without the suffix, since the totals include product category 1, so the category value should never come out to be higher than the overall total.
+
+I can alter the final SELECT statement to include the prior week's product category 1 sales, too, because the prior week's sales might be a good indicator of what to expect this week. I can use the LAG window function that was introduced in Chapter 7, ”Window Functions and Subqueries.”
+
+## How Do Sales Vary by Customer Zip Code, Market Distance, and Demographic Data?
+
